@@ -6,16 +6,15 @@
 
 	$handler = opendir($logsfolder);
 
+    $result = array();
+
 	$counter = 0;
-	while ($file = readdir($handler)) {
-		if ($file != '.' && $file != '..' && substr($file,-4) == ".log") {
-			array_push($arr, $file);
-			$counter++;
-		}
-	}
-
-	echo json_encode($arr);
-
+	while ($filename = readdir($handler)) {
+		if (pathinfo($filename, PATHINFO_EXTENSION) == "json") {                						 
+            $result[] = json_decode(file_get_contents($logsfolder.$filename,true));    
+        }
+    } 
+	echo json_encode($result);
 	closedir($handler);
 
 /*

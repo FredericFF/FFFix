@@ -124,6 +124,7 @@ function ChangeNick ($rawexplode) {
 	xfwrite("NICK " . $GLOBALS['nick']);
 	fclose($GLOBALS['logfile']);
 	@unlink($GLOBALS['logfilename']);
+	$GLOBALS['metafilename'] = $GLOBALS['logsfolder'] . $GLOBALS['nick'] . ".json";
 	$GLOBALS['logfilename'] = $GLOBALS['logsfolder'] . $GLOBALS['nick'] . ".log";
 	$GLOBALS['delfilename'] = $GLOBALS['logsfolder'] . $GLOBALS['nick'] . ".del";
 	$GLOBALS['logfile'] = fopen($GLOBALS['logfilename'], 'a');

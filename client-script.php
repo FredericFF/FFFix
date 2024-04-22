@@ -63,6 +63,19 @@ function xfecho ($data, $color = 'black', $ts = 1) {
 	}
 }
 
+function xfsetmeta ($key, string $value) {
+    if ((file_exists($GLOBALS['metafilename']))) {    
+        $arr = json_decode(file_get_contents($GLOBALS['metafilename']),true);    
+    } else {
+        $arr = array();
+    }    
+    if (!isset($arr['nick'])) {  
+        $arr['nick'] = $GLOBALS['nick'];
+    }  
+    $arr[$key] = $value;    
+    file_put_contents($GLOBALS['metafilename'], json_encode($arr));
+}
+
 function xfdie () {
 	if ($GLOBALS['killed'] == false) {
 		if ($GLOBALS['handle']) { 
@@ -87,10 +100,10 @@ function xfdie () {
 		xfecho('process killed (connection status: ' . connection_status() . ')');
 		fclose($GLOBALS['logfile']);
 		$GLOBALS['killed'] = true;
+		xfsetmeta("status","stopped");
 		die();
 	}
 }
-
 
 // Initialisation variables
 foreach ($argv as $arg) {
@@ -103,31 +116,59 @@ foreach ($argv as $arg) {
 	}
 }
 
-$server = ltrim(rtrim($_GET['server']));
-$port = ltrim(rtrim($_GET['port']));
-$channel = ltrim(rtrim($_GET['channel']));
-if (substr($channel, 0, 1) != '#') {
-	$channel = '#' . ltrim(rtrim($channel));
+if (isset($_GET['nick'])) {
+
+    $nick = $_GET['nick'];
+    
+    $filename = $nick.'.json';
+    
+    $result = (array) json_decode(file_get_contents($logsfolder.$filename,true));        
+   
+    $server = $result['server'];
+    $port = $result['port'];
+    $channel = $result['channel'];
+    $user = $result['user'];
+    $pack = $result['pack'];
+    
+    $metafilename = $logsfolder . $nick . '.json';
+        
+} else {
+    $server = ltrim(rtrim($_GET['server']));
+    $port = ltrim(rtrim($_GET['port']));
+    $channel = ltrim(rtrim($_GET['channel']));
+    if (substr($channel, 0, 1) != '#') {
+	    $channel = '#' . ltrim(rtrim($channel));
+    }
+    $user = $_GET['user'];
+    $pack = $_GET['pack'];
+    if (substr($pack, 0, 1) != '#') {
+	    $pack = '#' . ltrim(rtrim($pack));
+    }
+    
+    //test that the control file doesn't exist
+    do {
+	    $nick = 'xf' . rand(10000,99999);
+	    $metafilename = $logsfolder . $nick . '.json';
+    } while(file_exists($metafilename));
 }
-$user = $_GET['user'];
-$pack = $_GET['pack'];
-if (substr($pack, 0, 1) != '#') {
-	$pack = '#' . ltrim(rtrim($pack));
-}
+
+$logfilename = $logsfolder . $nick . '.log';
+$delfilename = $logsfolder . $nick . '.del';
 
 $join = 0;
 $joined = 0;
 $ison = 0;
 $percent = -1;
-
-//test that the logfile doesn't exist
-do {
-	$nick = 'xf' . rand(10000,99999);
-	$logfilename = $logsfolder . $nick . '.log';
-	$delfilename = $logsfolder . $nick . '.del';
-}while(file_exists($logfilename));
+$last_active_time = 0;
 
 $logfile = fopen($logfilename, 'a');
+
+xfsetmeta("status","initial");
+xfsetmeta("server",$server);
+xfsetmeta("port",$port);
+xfsetmeta("channel",$channel);
+xfsetmeta("user",$user);
+xfsetmeta("pack",$pack);
 
 while (true) {
 	$stream_socket = @fsockopen($server, $port, $errno, $errstr, 30);
@@ -136,6 +177,12 @@ while (true) {
 		xfdie();
 	}
 	else {
+
+        if ($last_active_time != time()) {
+            $last_active_time = time();
+            xfsetmeta("last_active_time",$last_active_time);
+        }       
+
 		stream_set_blocking($stream_socket, 0); //non blocking
 		//rfc 1459
 		xfwrite('NICK ' . $nick);
@@ -192,25 +239,32 @@ while (true) {
 			elseif ((stristr(p(0),$user)) && (p(3) == ':' . $SOH_Char .'DCC')) {
 				if (p(4) == 'SEND') {
 					echo "Starting DCC...\n";
+					xfsetmeta("status","starting DCC");
 					$DCCfilesize = (int)(substr(p(8), 0, -3));
 					$DCCfilename = p(5);
 					$DCCip = long2ip(p(6));
 					$DCCport = p(7);
 					$filename = $downloadfolder . $DCCfilename;
+					xfsetmeta("filename",$DCCfilename);
+					xfsetmeta("filesize",$DCCfilesize);
 				}
 				elseif (p(4) == 'ACCEPT') {
 					echo "Resume accepted...\n";
+					xfsetmeta("status","resume accepted");
 				}
 				if ((file_exists($filename)) && (p(4) == 'SEND')) {
 					if (filesize($filename) >= $DCCfilesize) {
 						xfecho('File already downloaded');
+						xfsetmeta("status","file already downloaded");
 						xfdie();
 					}
 					xfecho('Attempting resume...');
+					xfsetmeta("status","attempting resume");
 					xfwrite('PRIVMSG ' . $user . ' :' . $SOH_Char . 'DCC RESUME ' . $DCCfilename . ' ' . $DCCport . ' ' . filesize($filename) . $SOH_Char);
 				}
 				else {
 					xfecho('Connecting to ' . $DCCip . ' on port ' . $DCCport . ' (' . $DCCfilesize . ' bytes)...');
+					xfsetmeta("status","connecting");
 					//DCC stream
 					$dcc_stream = @fsockopen($DCCip, $DCCport, $errno, $errstr, 30);
 					if (!$dcc_stream) {
@@ -220,6 +274,7 @@ while (true) {
 					else {
 						stream_set_blocking($dcc_stream,0);
 						xfecho('Connected...');
+						xfsetmeta("status","connected");
 						$filename = $downloadfolder . $DCCfilename;
 						if (file_exists($filename . '.lck')) {
 							$filename = $downloadfolder . $nick . '.sav';
@@ -250,6 +305,7 @@ while (true) {
 									}
 									elseif ((p(1) == 'PRIVMSG') && (p(2) == $nick) && (p(3) == ':STOPXF')) {
 										xfecho('Manual abort');
+										xfsetmeta("status","manual abort");
 										xfdie();
 									}
 									elseif ((p(1) == 'PRIVMSG') && (p(2) == $nick) && (p(3) == ':COMMANDXF')) {
@@ -266,14 +322,16 @@ while (true) {
 								}
 							}
 							if ($currfilesize != 0) {
-								$currpercent = (int)(($currfilesize / $DCCfilesize) * 100);
+								$currpercent = (($currfilesize / $DCCfilesize) * 100);
 							}
 							else {
 								$currpercent = 0;
 							}
-							if ($currpercent > $percent) {
+							if ($currpercent > $percent && $percent_time != time()) {
 								$percent = $currpercent;
+								$percent_time = time();
 								xfecho($percent . '% completed - ' . $DCCfilename . ' - ' . $nick, '', true);
+								xfsetmeta("completion",$currpercent);
 							}
 							if (!file_exists($logfilename)) {
 								xfdie();
@@ -287,10 +345,14 @@ while (true) {
 							}
 							elseif ($currfilesize >= $DCCfilesize) {
 								xfecho('Downloaded!');
+								xfsetmeta("status","done");
+								xfsetmeta("completion","100");
 								xfdie();
 							}
 							elseif ($currfilesize > $DCCfilesize) {
 								xfecho('Current filesize is greater than expected! Aborting.');
+								xfsetmeta("status","done (filesize bigger)");
+    							xfsetmeta("completion","100");
 								xfdie();
 							}
 							$dccarr = array($dcc_stream);
@@ -298,6 +360,7 @@ while (true) {
 						}
 						if (filesize($filename) < $DCCfilesize) {
 							xfecho('Aborted.');
+							xfsetmeta("status","aborted");
 							fclose($dcc_stream);
 							@unlink($lockfilename);
 							fclose($handle);
