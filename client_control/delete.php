@@ -4,12 +4,13 @@ include "config.php";
 
 $nick = $_GET["nick"];
 
+$logfilename = $logsfolder.$nick.".log";
 $metafilename = $logsfolder.$nick.".json";
 
-$result = json_decode(file_get_contents($metafilename,true));    
+unlink($logfilename); // The processing task will abort if the log is gone
+unlink($metafilename); 
 
-shell_exec("php client-script.php nick='" . $nick . "' >/dev/null 2>/dev/null &");
-header("Location: index.php?clientstarted=yes&" . $_SERVER["QUERY_STRING"]);
+header("Location: ../index.php?clientstopped=yes");
 
 /*
 	This file is part of XDCC Fetcher.

@@ -2,12 +2,12 @@
 <html>
 	<head>
 		<title>FFFix</title>
-		<link rel="stylesheet" href="main.css">
+		<link rel="stylesheet" href="web/main.css">
 	</head>
 	<body class="omgcontainer">
         <div class="topbox">
             <div class="logo" id="logo" >
-                <a href="index.php"><img src="fffix.png" alt="FFFix Fetch Files From Irc Xdcc""></a>
+                <a href="index.php"><img src="web/fffix.png" alt="FFFix Fetch Files From Irc Xdcc""></a>
             </div>
             <div class="main_container">
             	<div class="page_header">
@@ -40,7 +40,7 @@
             </div>
         </div>
 	    <section>
-			<form method="GET" action="startclient.php" class="omgvertical">
+			<form method="GET" action="client_control/start.php" class="omgvertical">
 				<input type="text" name="server" placeholder="IRC server address:" value="<?php echo showContent("server"); ?>">
 				<input type="number" name="port" placeholder="IRC server port:" min="0" value="<?php echo showContent("port","6667"); ?>">
 				<input type="text" name="channel" placeholder="IRC channel:" value="<?php echo showContent("channel"); ?>">
@@ -67,9 +67,7 @@
 		</section>
 
 		<?php
-include 'footer.php';
-
-include "config.php";
+include 'web/footer.php';
 
 function showContent($field, $default = "") {
 	if (isset($_GET[$field]) && $_GET[$field] != "") {
@@ -79,8 +77,6 @@ function showContent($field, $default = "") {
 		return $default;
 	}
 }
-
-
 
 /*
 	This file is part of XDCC Fetcher.
@@ -134,12 +130,13 @@ function showContent($field, $default = "") {
             });                                
         }
 
+        AjaxGetRequest();
 		setInterval(AjaxGetRequest, 5*1000 );//all 5 seconds
 
 		function AjaxGetRequest() {
 			var req = new XMLHttpRequest();
 
-			req.open('GET', 'clientlist.php', true); //true for asynchronous
+			req.open('GET', 'ajax/clients_list.php', true); //true for asynchronous
 
 			req.onreadystatechange = function () {
 				if (req.readyState == 4) { //4 == XMLHttpRequest.DONE ie8+
@@ -186,8 +183,8 @@ function showContent($field, $default = "") {
                         item.filename,
                         bytesForHuman(item.filesize),
                         parseFloat(item.completion).toFixed(2)+'%',
-                        '<a href="showlog.php?log=' + item.nick + '.log" target="_blank">View Log</a>',
-                        '<a href="stopclient.php?nick=' + item.nick + '">Stop</a>'+'<a href="restartclient.php?nick=' + item.nick + '">Restart</a>'
+                        '<a href="functions/log_show.php?log=' + item.nick + '.log" target="_blank">View Log</a>',
+                        '<a href="client_control/stop.php?nick=' + item.nick + '">Stop</a>'+'<a href="client_control/restart.php?nick=' + item.nick + '">Restart</a>' + '<a href="client_control/delete.php?nick=' + item.nick + '">Delete</a>'
                     ]
                 );
                 

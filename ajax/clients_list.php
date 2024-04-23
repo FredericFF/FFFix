@@ -1,19 +1,18 @@
 <?php
+  
+    include 'config.php'; 
 
 	$arr = array();
-
-	include "config.php";
-
 	$handler = opendir($logsfolder);
-
     $result = array();
-
+    
 	$counter = 0;
 	while ($filename = readdir($handler)) {
 		if (pathinfo($filename, PATHINFO_EXTENSION) == "json") {                						 
             $result[] = json_decode(file_get_contents($logsfolder.$filename,true));    
         }
     } 
+  
 	echo json_encode($result);
 	closedir($handler);
 

@@ -2,13 +2,14 @@
 
 include "config.php";
 
-if (substr(php_uname(), 0, 7) == "Windows" || $showrealtime == true) {
-	header("Location: client-script.php?" . $_SERVER["QUERY_STRING"]);
-}
-else {
-	shell_exec("php client-script.php server='" . $_GET['server'] . "' port='" . $_GET['port'] . "' channel='" . $_GET['channel'] . "' user='" . $_GET['user'] . "' pack='" . $_GET['pack'] . "' >/dev/null 2>/dev/null &");
-	header("Location: index.php?clientstarted=yes&" . $_SERVER["QUERY_STRING"]);
-}
+$nick = $_GET["nick"];
+
+$logfilename = $logsfolder.$nick.".log";
+$metafilename = $logsfolder.$nick.".json";
+
+unlink($logfilename); // The processing task will abort if the log is gone
+
+header("Location: ../index.php?clientstopped=yes");
 
 /*
 	This file is part of XDCC Fetcher.

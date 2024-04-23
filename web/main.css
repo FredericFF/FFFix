@@ -39,6 +39,10 @@ a {
     margin-bottom: 10px;
 }
 
+#items_table_div a {
+    margin: 10px;
+}
+
 h1 {
 	color: var(--normal_text_color);
 }

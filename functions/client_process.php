@@ -1,18 +1,41 @@
 <?php
 
+/*-----------------------------------
+Settings
+*-----------------------------------*/
+
+// Report all PHP errors
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 set_time_limit(0);
 ignore_user_abort(true);
 register_shutdown_function('xfdie');
 
+/*-----------------------------------
+Includes
+*-----------------------------------*/
+
 include 'config.php';
-include 'raw.php';
+include $functionsfolder.'/raw.php';
+
+/*-----------------------------------
+Variables
+*-----------------------------------*/
 
 $SOH_Char = "\x01";//Start Of Heading
-
 $killed = false;
 $handle = '';
 $dcc_stream = '';
 $timer = '';
+$lockfilename = "";
+$stream_socket = null;
+$logfile = null;
+
+/*-----------------------------------
+* Functions
+*-----------------------------------*/
 
 function xfwrite ($data, $echo = true) {
 	if (substr($data, -1) != "\n") {
@@ -98,12 +121,18 @@ function xfdie () {
 		}
 		echo "Stopping DCC\n";
 		xfecho('process killed (connection status: ' . connection_status() . ')');
-		fclose($GLOBALS['logfile']);
+		if (isset($GLOBALS['logfile'])) {
+    		fclose($GLOBALS['logfile']);
+		}
 		$GLOBALS['killed'] = true;
 		xfsetmeta("status","stopped");
 		die();
 	}
 }
+
+/*-----------------------------------
+Start
+*-----------------------------------*/
 
 // Initialisation variables
 foreach ($argv as $arg) {
@@ -118,11 +147,20 @@ foreach ($argv as $arg) {
 
 if (isset($_GET['nick'])) {
 
-    $nick = $_GET['nick'];
-    
+    echo("WN");
+
+    $nick = $_GET['nick'];   
     $filename = $nick.'.json';
     
-    $result = (array) json_decode(file_get_contents($logsfolder.$filename,true));        
+    $file_contents = file_get_contents($logsfolder.$filename,true);
+    
+    echo(gettype($file_contents)." ".$file_contents);
+    
+    if ($file_contents === false) {
+        xfecho("Nickfile not loaded");
+        xfdie();
+    }    
+    $result = (array) json_decode($file_contents);        
    
     $server = $result['server'];
     $port = $result['port'];
@@ -133,6 +171,9 @@ if (isset($_GET['nick'])) {
     $metafilename = $logsfolder . $nick . '.json';
         
 } else {
+
+    echo("WON");
+
     $server = ltrim(rtrim($_GET['server']));
     $port = ltrim(rtrim($_GET['port']));
     $channel = ltrim(rtrim($_GET['channel']));
@@ -159,9 +200,15 @@ $join = 0;
 $joined = 0;
 $ison = 0;
 $percent = -1;
+$percent_time = -1;
 $last_active_time = 0;
 
 $logfile = fopen($logfilename, 'a');
+
+if (!$logfile) {
+	xfecho('Logfile not available');
+    xfdie();
+}
 
 xfsetmeta("status","initial");
 xfsetmeta("server",$server);
@@ -189,6 +236,18 @@ while (true) {
 		xfwrite('USER ' . $nick . ' ' . $nick . ' ' .$server . ' :XDCC Fetcher');
 
 		while (!feof($stream_socket)) {
+							
+		    if (!file_exists($logfilename)) {
+				xfdie();
+			}
+			if (file_exists($delfilename)) {
+				@unlink($delfilename);
+				sleep(2);
+				fclose($logfile);
+				@unlink($logfilename);
+				xfdie();
+			}
+				
     		$write = NULL;
     		$except = NULL;
 			$streams = array($stream_socket);
@@ -217,17 +276,7 @@ while (true) {
 				if ($string != '') {
 					xfwrite(rtrim($string));
 				}
-			}
-			elseif (!file_exists($logfilename)) {
-				xfdie();
-			}
-			elseif (file_exists($delfilename)) {
-				@unlink($delfilename);
-				sleep(2);
-				fclose($logfile);
-				@unlink($logfilename);
-				xfdie();
-			}
+			}			
 			elseif ((stristr($get,$user)) && (stristr($get, 'all slots full')) 
 				&& (!stristr($get, 'Added you')) && (p(1) == 'NOTICE') && (p(2) == $nick)) {
 				$timer = time() + 30;
