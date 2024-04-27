@@ -1,22 +1,10 @@
-<html><head>
-<style type="text/css"><!--
-BODY { font-family: Courier New, Fixedsys; margin-left:5ex; font-size: 12px; background-color:#CCCCCC; }
-.TS { color: #999999; }
-IMG {
-	width: 300px;
-	height: 32px;
-	border: 0px;
-	margin-top: 30px;
-	margin-bottom: 15px;
-}
-A {
-	color: #333333;
-	font-size: 12px;
-}
-P { margin:0px; text-indent: -2ex; }
---></style></head>
-<body>
-<center><img src="logo.gif"></center>
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>FFFix Log</title>
+		<link rel="stylesheet" href="../web/main.css">
+	</head>
+	<body class="omgcontainer">
 <?php
 
 include "config.php";
@@ -24,7 +12,7 @@ include "config.php";
 $logfilename = $logsfolder . $_GET["log"];
 
 if (file_exists($logfilename)) {
-	echo "Server time: " . date("Y-m-d H:i:s") . "<br><br><a href=\"stopclient.php?log=" . $_GET["log"] . "\">Stop this client</a><br><br>";
+	echo "Server time: " . date("Y-m-d H:i:s") . "<br><br>";
 
 	$logfile = fopen($logfilename,"r");
 	if (filesize($logfilename) > 0) {
@@ -38,11 +26,15 @@ if (file_exists($logfilename)) {
 				}
 				else {
 					$startparse = 2;
-					$echoline = "<p style=\"color:" . $parse[1] . "\">";
+//					$echoline = "<span style=\"color:" . $parse[1] . "\">";
+
+					$echoline = "";
 
 					$string = "";
-					for ($x=$startparse; $x<count($parse); $x++) { $string .= $parse[$x] . " "; }
-					$echoline .= "<span class=\"TS\">" . date("[Y-m-d H:i:s]",$parse[0]) . "</span> " . rtrim($string) . "</p>";
+					for ($x=$startparse; $x<count($parse); $x++) { 
+					    $string .= $parse[$x] . " "; 
+				    }
+					$echoline .= "<span class=\"log_time\">".date("[Y-m-d H:i:s]",$parse[0]) . "</span><span class=\"log_".$parse[1]."\">&nbsp;" . rtrim($string) . "</span><br>";
 
 					echo $echoline;
 				}
@@ -51,9 +43,6 @@ if (file_exists($logfilename)) {
 		}
 	}
 	fclose($logfile);
-
-	echo "<br><br>
-	<a href=\"stopclient.php?log=" . $_GET["log"] . "\">Stop this client</a></body></html>";
 }
 else {
 	echo "File does not exist";
@@ -77,3 +66,6 @@ else {
 */
 
 ?>
+
+    </body>
+</html>

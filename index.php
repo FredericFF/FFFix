@@ -4,7 +4,7 @@
 		<title>FFFix</title>
 		<link rel="stylesheet" href="web/main.css">
 	</head>
-	<body class="omgcontainer">
+	<body class="omgcontainer centered">
         <div class="topbox">
             <div class="logo" id="logo" >
                 <a href="index.php"><img src="web/fffix.png" alt="FFFix Fetch Files From Irc Xdcc""></a>
@@ -103,6 +103,8 @@ function showContent($field, $default = "") {
         
             if (bytes === undefined) {
                 return('');
+            } if (bytes == 0) {
+                return('0');
             }
         
             let units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -131,7 +133,7 @@ function showContent($field, $default = "") {
         }
 
         AjaxGetRequest();
-		setInterval(AjaxGetRequest, 5*1000 );//all 5 seconds
+		setInterval(AjaxGetRequest, 3*1000 );//all 3 seconds
 
 		function AjaxGetRequest() {
 			var req = new XMLHttpRequest();
@@ -169,7 +171,13 @@ function showContent($field, $default = "") {
                 if (item.last_active_time === undefined) {
                     var time = "?";
                 } else {
-                    var time = Date(item.last_active_time).toString();
+
+                    item.last_active_time;                    
+                    var now = Date.now()/1000; // UNIX
+                    
+                    if (now-item.last_active_time > 120) { 
+                        item.status = item.status + ' (stale)';
+                    }
                 }
                                
      	        addRow(

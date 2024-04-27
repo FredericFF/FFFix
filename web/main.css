@@ -4,18 +4,27 @@
   --medium_color: #1c99e0;
   --medium_light_color: #5aafe0;
   --light_color: #bed4e0;
-  
+   
   --background_color: var(--dark_color);
   --normal_text_color: white;
-  --table_border_color: var(--light_color)
+  --table_border_color: var(--light_color);
+  
+  --log_time_color: var(--table_border_color);
+  --log_green_color: #00ff00;
+  --log_black_color: var(--normal_text_color);
+  --log_red_color: #ff4040;
+  --log_blue_color: var(--medium_light_color)
 }
 
 body {
 	background-color: var(--background_color);
-	text-align: center;
     font-family: Arial, Helvetica, sans-serif;
 	font-size: 70%;
 	color: var(--normal_text_color);
+}
+
+.centered {
+	text-align: center;
 }
 
 a {
@@ -97,4 +106,29 @@ td {
     height: 100px;
     width: 100px;
 }
+
+/*
+Log
+*/
+
+.log_time {
+    color: var(--log_time_color);
+}
+
+.log_black {
+    color: var(--log_black_color);
+}
+
+.log_green {
+    color: var(--log_green_color);
+}
+
+.log_red {
+    color: var(--log_red_color);
+}
+
+.log_blue {
+    color: var(--log_blue_color);
+}
+
 

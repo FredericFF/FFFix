@@ -99,7 +99,7 @@ function xfsetmeta ($key, string $value) {
     file_put_contents($GLOBALS['metafilename'], json_encode($arr));
 }
 
-function xfdie () {
+function xfdie ($status = 'stopped') {
 	if ($GLOBALS['killed'] == false) {
 		if ($GLOBALS['handle']) { 
 			fclose($GLOBALS['handle']); 
@@ -125,7 +125,7 @@ function xfdie () {
     		fclose($GLOBALS['logfile']);
 		}
 		$GLOBALS['killed'] = true;
-		xfsetmeta("status","stopped");
+		xfsetmeta("status",$status);
 		die();
 	}
 }
@@ -147,15 +147,13 @@ foreach ($argv as $arg) {
 
 if (isset($_GET['nick'])) {
 
-    echo("WN");
-
     $nick = $_GET['nick'];   
     $filename = $nick.'.json';
+
+    xfecho("Start with nick ".$nick);
     
     $file_contents = file_get_contents($logsfolder.$filename,true);
-    
-    echo(gettype($file_contents)." ".$file_contents);
-    
+       
     if ($file_contents === false) {
         xfecho("Nickfile not loaded");
         xfdie();
@@ -169,10 +167,12 @@ if (isset($_GET['nick'])) {
     $pack = $result['pack'];
     
     $metafilename = $logsfolder . $nick . '.json';
+    $logfilename = $logsfolder . $nick . '.log';
+    $delfilename = $logsfolder . $nick . '.del';
         
 } else {
 
-    echo("WON");
+    xfecho("Start");
 
     $server = ltrim(rtrim($_GET['server']));
     $port = ltrim(rtrim($_GET['port']));
@@ -191,10 +191,12 @@ if (isset($_GET['nick'])) {
 	    $nick = 'xf' . rand(10000,99999);
 	    $metafilename = $logsfolder . $nick . '.json';
     } while(file_exists($metafilename));
+    
+    $logfilename = $logsfolder . $nick . '.log';
+    $delfilename = $logsfolder . $nick . '.del';
+
 }
 
-$logfilename = $logsfolder . $nick . '.log';
-$delfilename = $logsfolder . $nick . '.del';
 
 $join = 0;
 $joined = 0;
@@ -223,12 +225,7 @@ while (true) {
 		xfecho($errstr . ': ' . $errno);
 		xfdie();
 	}
-	else {
-
-        if ($last_active_time != time()) {
-            $last_active_time = time();
-            xfsetmeta("last_active_time",$last_active_time);
-        }       
+	else {       
 
 		stream_set_blocking($stream_socket, 0); //non blocking
 		//rfc 1459
@@ -236,6 +233,11 @@ while (true) {
 		xfwrite('USER ' . $nick . ' ' . $nick . ' ' .$server . ' :XDCC Fetcher');
 
 		while (!feof($stream_socket)) {
+			
+	        if ($last_active_time != time()) {
+                $last_active_time = time();
+                xfsetmeta("last_active_time",$last_active_time);
+            }      
 							
 		    if (!file_exists($logfilename)) {
 				xfdie();
@@ -396,13 +398,16 @@ while (true) {
 								xfecho('Downloaded!');
 								xfsetmeta("status","done");
 								xfsetmeta("completion","100");
-								xfdie();
+								if (rename($downloadfolder . $DCCfilename,$completeddownloadfolder . $DCCfilename) === false) {
+    								xfecho('Failed to move'." ".$downloadfolder.$DCCfilename." -> ".$completeddownloadfolder.$DCCfilename);
+									xfdie("done (failed to move)");
+								}
+								xfdie("done");
 							}
 							elseif ($currfilesize > $DCCfilesize) {
 								xfecho('Current filesize is greater than expected! Aborting.');
-								xfsetmeta("status","done (filesize bigger)");
     							xfsetmeta("completion","100");
-								xfdie();
+								xfdie("done (filesize bigger)");
 							}
 							$dccarr = array($dcc_stream);
 							@stream_select($dccarr, $write = NULL, $except = NULL, 3);

@@ -8,8 +8,13 @@ $metafilename = $logsfolder.$nick.".json";
 
 $result = json_decode(file_get_contents($metafilename,true));    
 
-shell_exec("php client-script.php nick='" . $nick . "' >/dev/null 2>/dev/null &");
+$command = "php ".$functionsfolder."client_process.php nick='".$nick."'";
+$output = " >/dev/null 2>/dev/null &";
+
+$return = shell_exec($command.$output);
+
 header("Location: ../index.php?clientstarted=yes&" . $_SERVER["QUERY_STRING"]);
+
 
 /*
 	This file is part of XDCC Fetcher.
