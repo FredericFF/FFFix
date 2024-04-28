@@ -1,3 +1,33 @@
+<?php
+    // Report all PHP errors
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);     
+    
+    // Fetch plugins
+    $plugins = array();
+    $handler = opendir('plugins');                       
+    while ($filename = readdir($handler)) {
+        if (pathinfo($filename, PATHINFO_EXTENSION) == "php") {                						 
+            $plugin = array();
+            $plugin['name'] = pathinfo($filename, PATHINFO_FILENAME);
+            $plugin['file'] = pathinfo($filename, PATHINFO_BASENAME);
+            $plugins[] = $plugin;
+            include('plugins/'.$plugin['file']);
+        }
+    } 
+    
+    // Handle plugins POST
+    foreach ($_POST as $key => $value) {           
+        foreach ($plugins as $plugin) {
+            if (strpos($key, $plugin['name']) !== false) {
+                $handle_function = $plugin['name'].'_handle';
+                $handle_function();            
+            }
+        }       
+    }  
+    
+?>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -48,6 +78,14 @@
 				<input type="number" name="pack" placeholder="Pack number:" min="-1" value="<?php echo showContent("pack"); ?>">
 				<input type="submit" value="GO GET IT! &raquo;">
 			</form>
+		</section>
+	    <section>
+        <?php                 
+            foreach($plugins as $plugin) {                
+                $show_function = $plugin['name'].'_show';
+                $show_function();
+            }
+        ?>	    	    
 		</section>
         <br>
 		<section>
