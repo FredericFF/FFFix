@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /*
 *   Plugin for XDDC.eu search engine
@@ -8,12 +8,18 @@
 */
 
     function xdcceu_show() {
+
+	$examplestring = "Server: irc.myserver.com
+Channel: #channel
+Command: /msg Username xdcc send #1234
+or command: /ctcp Username xdcc send #1234";
+
         echo ('
-        <hr>
-        Paste from xdcc.eu:
+        <hr><h1>
+        Paste from <a href="https://www.xdcc.eu" target="_blank">xdcc.eu</a>:</h1>
 			<form method="POST">
-				<textarea name="xdcceu_text"></textarea><br>
-				<input type="submit" value="GO GET IT! &raquo;">
+				<textarea name="xdcceu_text" placeholder="'.$examplestring.'"></textarea><br>
+				<input type="submit" value="Apply">
 			</form>'
     	);	
     }

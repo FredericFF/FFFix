@@ -44,7 +44,6 @@
             		<h1 class="omgcenter"><a class="title" href="index.php">FFFix Fetch Files From Irc Xdcc</a></h1>
             	</div>
 	            <div id="items_table_div">
-	                <h2>Items</h2>
 	                <table align="center">
 		                <tr>
 			                <th>#</th>
