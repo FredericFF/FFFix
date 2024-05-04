@@ -53,7 +53,7 @@ Command: \/msg ([A-z.0-9-]+) xdcc send #([0-9]+)
             $channel = '#'.$matches[1];
         }
         $matches = array();
-        if (preg_match("/Command: \/msg ([A-z.0-9-]+)/",$xdcceu_text, $matches)) {
+        if (preg_match("/Command: \/msg ([^\s]+)/",$xdcceu_text, $matches)) {
             $user = $matches[1];
         }
         $matches = array();
