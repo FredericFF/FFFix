@@ -344,6 +344,13 @@ while (true) {
 						}
 						$handle = fopen($filename, 'a');
 
+						if ($handle === false) {
+							xfecho("Unable to open ".$filename, 'red');
+							xfdie();
+						} else {
+							xfecho("Opened ".$filename, 'green');
+						}
+
 						while (!feof($dcc_stream)) {
 							savetofile();
 							if (!feof($stream_socket)) {
