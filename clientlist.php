@@ -1,21 +1,24 @@
 <?php
 
-include "config.php";
+	$arr = array();
 
-$handler = opendir($logsfolder);
+	include "config.php";
 
-$counter = 0;
-while ($file = readdir($handler)) {
-	if ($file != '.' && $file != '..' && substr($file,-4) == ".log") {
-		echo("parent.clients[" . $counter . "] = '" . $file . "';\n");
-		$counter++;
+	$handler = opendir($logsfolder);
+
+	$counter = 0;
+	while ($file = readdir($handler)) {
+		if ($file != '.' && $file != '..' && substr($file,-4) == ".log") {
+			array_push($arr, $file);
+			$counter++;
+		}
 	}
-}
-echo "parent.clientscounter = " . ($counter - 1) . ";
-parent.ShowClients();";
-closedir($handler);
 
-/* 
+	echo json_encode($arr);
+
+	closedir($handler);
+
+/*
 	This file is part of XDCC Fetcher.
 
 	XDCC Fetcher is free software: you can redistribute it and/or modify
