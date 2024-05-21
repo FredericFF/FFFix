@@ -1,6 +1,17 @@
 <?php
 
 /*-----------------------------------
+Info
+The following color codes exist:
+- default
+- status
+- sent
+- private_send
+- private_received
+- error
+*-----------------------------------*/
+
+/*-----------------------------------
 Settings
 *-----------------------------------*/
 
@@ -28,7 +39,7 @@ $SOH_Char = "\x01";//Start Of Heading
 $killed = false;
 $handle = '';
 $dcc_stream = '';
-$timer = '';
+$timer = time();
 $lockfilename = "";
 $stream_socket = null;
 $logfile = null;
@@ -43,7 +54,7 @@ function xfwrite ($data, $echo = true) {
 	}
 	fwrite($GLOBALS['stream_socket'], $data);
 	if ($echo) {
-		xfecho($data, 'blue');
+		xfecho($data, 'sent');
 	}
 }
 
@@ -63,7 +74,7 @@ function savetofile () {
 	}
 }
 
-function xfecho ($data, $color = 'black', $ts = 1) {
+function xfecho ($data, string $color = 'default', $ts = 1) {
 	if (($data != '') && ($data != "\n") && (file_exists($GLOBALS['logfilename']))) {
 		if (substr($data, -1) != "\n") {
 			$data .= "\n";
@@ -120,7 +131,7 @@ function xfdie ($status = 'stopped') {
 			}
 		}
 		echo "Stopping DCC\n";
-		xfecho('process killed (connection status: ' . connection_status() . ')');
+		xfecho('process killed (connection status: ' . connection_status() . ')','error');
 		if (isset($GLOBALS['logfile'])) {
     		fclose($GLOBALS['logfile']);
 		}
@@ -150,12 +161,12 @@ if (isset($_GET['nick'])) {
     $nick = $_GET['nick'];   
     $filename = $nick.'.json';
 
-    xfecho("Start with nick ".$nick);
+    xfecho("Start with nick ".$nick, 'status');
     
     $file_contents = file_get_contents($logsfolder.$filename,true);
        
     if ($file_contents === false) {
-        xfecho("Nickfile not loaded");
+        xfecho("Nickfile not loaded", 'error');
         xfdie();
     }    
     $result = (array) json_decode($file_contents);        
@@ -172,7 +183,7 @@ if (isset($_GET['nick'])) {
         
 } else {
 
-    xfecho("Start");
+    xfecho("Start", 'status');
 
     $server = ltrim(rtrim($_GET['server']));
     $port = ltrim(rtrim($_GET['port']));
@@ -198,8 +209,9 @@ if (isset($_GET['nick'])) {
 }
 
 
-$join = 0;
-$joined = 0;
+$join = false;
+$joined = false;
+$requested = false;
 $ison = 0;
 $percent = -1;
 $percent_time = -1;
@@ -208,7 +220,7 @@ $last_active_time = 0;
 $logfile = fopen($logfilename, 'a');
 
 if (!$logfile) {
-	xfecho('Logfile not available');
+    xfecho('Logfile not available');
     xfdie();
 }
 
@@ -233,13 +245,12 @@ while (true) {
 		xfwrite('USER ' . $nick . ' ' . $nick . ' ' .$server . ' :XDCC Fetcher');
 
 		while (!feof($stream_socket)) {
-			
-	        if ($last_active_time != time()) {
-                $last_active_time = time();
-                xfsetmeta("last_active_time",$last_active_time);
-            }      
-							
-		    if (!file_exists($logfilename)) {
+		        if ($last_active_time != time()) {
+		                $last_active_time = time();
+		                xfsetmeta("last_active_time",$last_active_time);
+			}
+
+			if (!file_exists($logfilename)) {
 				xfdie();
 			}
 			if (file_exists($delfilename)) {
@@ -249,21 +260,28 @@ while (true) {
 				@unlink($logfilename);
 				xfdie();
 			}
-				
-    		$write = NULL;
-    		$except = NULL;
+
+	    		$write = NULL;
+    			$except = NULL;
 			$streams = array($stream_socket);
 			stream_select($streams, $write, $except, 3);
 			$get = fgets($stream_socket);
+			//------------------------------------------------
 			CheckRaw($get);
+			//------------------------------------------------
 			$parse = explode(' ', $get);
+
 			if (rtrim($get) != '' && p(0) != 'PING') {
-				if ($logall == true || (stristr($get, $user) && p(2) == $nick)) {
+
+				if (p(2) == $nick) {
+					xfecho($get,'private_received');
+				}
+				else if ($logall) {
 					xfecho($get);
 				}
 			}
 			if (p(0) == 'PING') {
-				xfecho('PING? PONG!','green');
+				xfecho('PING? PONG!','status');
 				xfwrite('PONG ' . substr(p(1), 1),false);
 			}
 			elseif ((p(1) == 'PRIVMSG') && (p(2) == $nick) && (p(3) == ':STOPXF')) {
@@ -278,13 +296,14 @@ while (true) {
 				if ($string != '') {
 					xfwrite(rtrim($string));
 				}
-			}			
+			}
 			elseif ((stristr($get,$user)) && (stristr($get, 'all slots full')) 
 				&& (!stristr($get, 'Added you')) && (p(1) == 'NOTICE') && (p(2) == $nick)) {
 				$timer = time() + 30;
 			}
-			elseif ((time() >= $timer) && ($timer != 0)) {
-				$timer = 0;
+			elseif ($joined && ((time() >= $timer) && ($timer != 0))) {
+				$timer = time() + 30;
+				xfecho("Requesting...",'status');
 				xfwrite('PRIVMSG ' . $user . ' :' . $SOH_Char . 'XDCC SEND ' . $pack . $SOH_Char);
 			}
 			elseif ((stristr(p(0),$user)) && (p(3) == ':' . $SOH_Char .'DCC')) {
@@ -309,12 +328,12 @@ while (true) {
 						xfsetmeta("status","file already downloaded");
 						xfdie();
 					}
-					xfecho('Attempting resume...');
+					xfecho('Attempting resume...','status');
 					xfsetmeta("status","attempting resume");
 					xfwrite('PRIVMSG ' . $user . ' :' . $SOH_Char . 'DCC RESUME ' . $DCCfilename . ' ' . $DCCport . ' ' . filesize($filename) . $SOH_Char);
 				}
 				else {
-					xfecho('Connecting to ' . $DCCip . ' on port ' . $DCCport . ' (' . $DCCfilesize . ' bytes)...');
+					xfecho('Connecting to ' . $DCCip . ' on port ' . $DCCport . ' (' . $DCCfilesize . ' bytes)...','status');
 					xfsetmeta("status","connecting");
 					//DCC stream
 					$dcc_stream = @fsockopen($DCCip, $DCCport, $errno, $errstr, 30);
@@ -324,7 +343,7 @@ while (true) {
 					}
 					else {
 						stream_set_blocking($dcc_stream,0);
-						xfecho('Connected...');
+						xfecho('Connected...','status');
 						xfsetmeta("status","connected");
 						$filename = $downloadfolder . $DCCfilename;
 						if (file_exists($filename . '.lck')) {
@@ -345,13 +364,14 @@ while (true) {
 						$handle = fopen($filename, 'a');
 
 						if ($handle === false) {
-							xfecho("Unable to open ".$filename, 'red');
+							xfecho("Unable to open ".$filename, 'error');
 							xfdie();
 						} else {
-							xfecho("Opened ".$filename, 'green');
+							xfecho("Opened ".$filename, 'status');
 						}
 
 						while (!feof($dcc_stream)) {
+		                                        xfsetmeta("status","downloading");
 							savetofile();
 							if (!feof($stream_socket)) {
 								$get = fgets($stream_socket);
@@ -388,7 +408,7 @@ while (true) {
 							if ($currpercent > $percent && $percent_time != time()) {
 								$percent = $currpercent;
 								$percent_time = time();
-								xfecho($percent . '% completed - ' . $DCCfilename . ' - ' . $nick, '', true);
+								xfecho($percent . '% completed - ' . $DCCfilename . ' - ' . $nick, '', 'status');
 								xfsetmeta("completion",$currpercent);
 							}
 							if (!file_exists($logfilename)) {
@@ -402,7 +422,7 @@ while (true) {
 								xfdie();
 							}
 							elseif ($currfilesize >= $DCCfilesize) {
-								xfecho('Downloaded!');
+								xfecho('Downloaded!','status');
 								xfsetmeta("status","done");
 								xfsetmeta("completion","100");
 								if (rename($downloadfolder . $DCCfilename,$completeddownloadfolder . $DCCfilename) === false) {
@@ -413,7 +433,7 @@ while (true) {
 							}
 							elseif ($currfilesize > $DCCfilesize) {
 								xfecho('Current filesize is greater than expected! Aborting.');
-    							xfsetmeta("completion","100");
+	    							xfsetmeta("completion","100");
 								xfdie("done (filesize bigger)");
 							}
 							$dccarr = array($dcc_stream);
@@ -433,7 +453,7 @@ while (true) {
 		}
 	}
 
-	xfecho('Disconnected from server! Reconnecting in 60 seconds...');
+	xfecho('Disconnected from server! Reconnecting in 60 seconds...','error');
 	sleep(60);
 }
 

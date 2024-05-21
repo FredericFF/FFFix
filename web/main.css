@@ -10,9 +10,11 @@
   --table_border_color: var(--light_color);
   
   --log_time_color: var(--table_border_color);
-  --log_green_color: #00ff00;
-  --log_black_color: var(--normal_text_color);
+  --log_green_color: #72e747;
+  --log_yellow_color: #FFCC00;
   --log_red_color: #ff4040;
+  --log_black_color: var(--normal_text_color);
+  --log_purple_color: #e21767;
   --log_blue_color: var(--medium_light_color)
 }
 
@@ -29,7 +31,6 @@ body {
 
 a {
 	color: var(--normal_text_color);
-	text-decoration: none;
 }
 
 .topbox {
@@ -120,20 +121,28 @@ Log
     color: var(--log_time_color);
 }
 
-.log_black {
+.log_default {
     color: var(--log_black_color);
 }
 
-.log_green {
-    color: var(--log_green_color);
+.log_status {
+    color: var(--log_yellow_color);
 }
 
-.log_red {
+.log_error {
     color: var(--log_red_color);
 }
 
-.log_blue {
+.log_sent {
     color: var(--log_blue_color);
+}
+
+.log_private_sent {
+    color: var(--log_blue_color);
+}
+
+.log_private_received {
+    color: var(--log_green_color);
 }
 
 

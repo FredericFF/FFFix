@@ -41,7 +41,11 @@
             </div>
             <div class="main_container">
             	<div class="page_header">
-            		<h1 class="omgcenter"><a class="title" href="index.php">FFFix Fetch Files From Irc Xdcc</a></h1>
+            		<h1 class="omgcenter">
+				<a class="title" style="text-decoration: none;" href="index.php">
+					FFFix Fetch Files From Irc Xdcc
+				</a>
+			</h1>
             	</div>
 	            <div id="items_table_div">
 	                <table align="center">

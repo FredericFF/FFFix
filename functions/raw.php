@@ -2,12 +2,12 @@
 
 $raw['004']['command'] = "GetServerName";
 $raw['004']['pretext'] = "Connected to server (#xf#server#xf#)";
-$raw['004']['precolor'] = "red";
+$raw['004']['precolor'] = "status";
 function GetServerName($rawexplode) { $server = $rawexplode[3]; }
 
 $raw['376']['command'] = "IsOn";
 $raw['376']['ttext'] = "Checking if #xf#user#xf# is online...";
-$raw['376']['tcolor'] = "green";
+$raw['376']['tcolor'] = "status";
 $raw['MODE'] = $raw['376'];
 function IsOn ($rawexplode) {
 	if ($GLOBALS['ison'] == 0) {
@@ -20,9 +20,9 @@ function IsOn ($rawexplode) {
 
 $raw['303']['command'] = "JoinChannel";
 $raw['303']['ttext'] = "User is online. Attempting to join #xf#channel#xf#...";
-$raw['303']['tcolor'] = "green";
+$raw['303']['tcolor'] = "status";
 $raw['303']['ftext'] = "User is NOT online!";
-$raw['303']['fcolor'] = "red";
+$raw['303']['fcolor'] = "error";
 $raw['303']['fquit'] = 1;
 function JoinChannel ($rawexplode) {
 	if ($rawexplode[3] == ":" . $GLOBALS['user']) {
@@ -33,11 +33,20 @@ function JoinChannel ($rawexplode) {
 	else { return false; }
 }
 
-$raw['366']['command'] = "SendRequest";
-$raw['366']['ttext'] = "Successfully joined #xf#channel#xf#. Attempting to retrieve pack #xf#pack#xf# from #xf#user#xf#";
-$raw['366']['tcolor'] = "green";
+//$raw['366']['command'] = "SendRequest";
+$raw['366']['command'] = "SetJoined";
+//$raw['366']['ttext'] = "Successfully joined #xf#channel#xf#. Attempting to retrieve pack #xf#pack#xf# from #xf#user#xf#";
+$raw['366']['ttext'] = "Successfully joined #xf#channel#xf#.";
+$raw['366']['tcolor'] = "status";
 $raw['366']['ftext'] = "Successfully rejoined #xf#channel#xf#";
-$raw['366']['fcolor'] = "red";
+$raw['366']['fcolor'] = "status";
+function SetJoined ($rawexplode) {
+	if ($GLOBALS['joined'] == 0) {
+		$GLOBALS['joined'] = 1;
+		return true;
+	}
+	else { return false; }
+}
 function SendRequest ($rawexplode) {
 	if ($GLOBALS['joined'] == 0) {
 		$GLOBALS['joined'] = 1;
@@ -49,7 +58,7 @@ function SendRequest ($rawexplode) {
 
 $raw['PART']['command'] = "UserAction";
 $raw['PART']['ttext'] = "User has parted #xf#channel#xf#!";
-$raw['PART']['tcolor'] = "red";
+$raw['PART']['tcolor'] = "error";
 function UserAction ($rawexplode) {
 	if (substr($rawexplode[0],0,strlen($GLOBALS['user'])+2) == ":" . $GLOBALS['user'] . "!") { return true; }
 	else { return false; }
@@ -57,16 +66,16 @@ function UserAction ($rawexplode) {
 
 $raw['JOIN']['command'] = "UserAction";
 $raw['JOIN']['ttext'] = "User has rejoined #xf#channel#xf#!";
-$raw['JOIN']['tcolor'] = "red";
+$raw['JOIN']['tcolor'] = "status";
 
 $raw['QUIT']['command'] = "UserAction";
 $raw['QUIT']['ttext'] = "User has quit IRC!";
-$raw['QUIT']['tcolor'] = "red";
+$raw['QUIT']['tcolor'] = "error";
 $raw['QUIT']['tquit'] = 1;
 
 $raw['NICK']['command'] = "ChangedNick";
 $raw['NICK']['ttext'] = "User has changed nick to #xf#user#xf#";
-$raw['NICK']['tcolor'] = "blue";
+$raw['NICK']['tcolor'] = "status";
 function ChangedNick ($rawexplode) {
 	if (substr($rawexplode[0],0,strlen($GLOBALS['user'])+2) == ":" . $GLOBALS['user'] . "!") {
 		return true;
@@ -76,7 +85,7 @@ function ChangedNick ($rawexplode) {
 }
 
 $raw['KICK']['command'] = "Kicked";
-$raw['KICK']['tcolor'] = "red";
+$raw['KICK']['tcolor'] = "error";
 function Kicked ($rawexplode) {
 	if ($rawexplode[3] == $GLOBALS['user']) {
 		$GLOBALS['raw']['KICK']['ttext'] = "User was kicked from #xf#user#xf#";
@@ -91,27 +100,27 @@ function Kicked ($rawexplode) {
 }
 
 $raw['471']['pretext'] = "Cannot join #xf#channel#xf# as the channel has too many users!";
-$raw['471']['precolor'] = "red";
+$raw['471']['precolor'] = "error";
 $raw['471']['quit'] = 1;
 
 $raw['473']['pretext'] = "Cannot join #xf#channel#xf# as the channel is invite-only!";
-$raw['473']['precolor'] = "red";
+$raw['473']['precolor'] = "error";
 $raw['473']['quit'] = 1;
 
 $raw['474']['pretext'] = "Cannot join #xf#channel#xf# as you are banned!";
-$raw['474']['precolor'] = "red";
+$raw['474']['precolor'] = "error";
 $raw['474']['quit'] = 1;
 
 $raw['475']['pretext'] = "Cannot join #xf#channel#xf# as the channel requires a key!";
-$raw['475']['precolor'] = "red";
+$raw['475']['precolor'] = "error";
 $raw['475']['quit'] = 1;
 
 $raw['477']['pretext'] = "Cannot join #xf#channel#xf# as you need a registered nick!";
-$raw['477']['precolor'] = "red";
+$raw['477']['precolor'] = "error";
 $raw['477']['quit'] = 1;
 
 $raw['485']['pretext'] = "Cannot join #xf#channel#xf# due to an unknown reason!";
-$raw['485']['precolor'] = "red";
+$raw['485']['precolor'] = "error";
 $raw['485']['quit'] = 1;
 
 $raw['401']['pretext'] = "User is NOT online!";
@@ -135,7 +144,7 @@ $raw['AUTH']['precolor'] = "brown";
 
 $raw['PRIVMSG']['command'] = "VersionReply";
 $raw['PRIVMSG']['ttext'] = "Version request received from #xf#versionnick#xf#. Reply sent.";
-$raw['PRIVMSG']['tcolor'] = "red";
+$raw['PRIVMSG']['tcolor'] = "status";
 function VersionReply ($rawexplode) {
 	if (substr($rawexplode[3],0,10) == ":VERSION") {
 		$versionnickparse = split('!',$rawexplode[0]);
@@ -149,35 +158,36 @@ function CheckRaw ($line) {
 	$rawexplode = explode(" ",$line);
 	if (isset($rawexplode[1])) {
 		$rawcode = $rawexplode[1];
+
 		$commandreturn = true;
 		if (isset($GLOBALS['raw'][$rawcode]['pretext'])) { 
-		    RawEcho($GLOBALS['raw'][$rawcode]['pretext'],$GLOBALS['raw'][$rawcode]['precolor']); 
-	    }
+			RawEcho($GLOBALS['raw'][$rawcode]['pretext'],$GLOBALS['raw'][$rawcode]['precolor']); 
+		}
 		if (isset($GLOBALS['raw'][$rawcode]['command'])) { 
-		    eval("$" . "commandreturn = " . $GLOBALS['raw'][$rawcode]['command'] . "($" . "rawexplode);"); 
+			eval("$" . "commandreturn = " . $GLOBALS['raw'][$rawcode]['command'] . "($" . "rawexplode);"); 
 		}
 		if (isset($GLOBALS['raw'][$rawcode]['posttext'])) { 
-		    RawEcho($GLOBALS['raw'][$rawcode]['posttext'],$GLOBALS['raw'][$rawcode]['postcolor']); 
-	    }
+			RawEcho($GLOBALS['raw'][$rawcode]['posttext'],$GLOBALS['raw'][$rawcode]['postcolor']); 
+		}
 		if ($commandreturn == true) {
 			if (isset($GLOBALS['raw'][$rawcode]['ttext'])) { 
-			    RawEcho($GLOBALS['raw'][$rawcode]['ttext'],$GLOBALS['raw'][$rawcode]['tcolor']); 
-		    }
+				RawEcho($GLOBALS['raw'][$rawcode]['ttext'],$GLOBALS['raw'][$rawcode]['tcolor']); 
+			}
 			if (isset($GLOBALS['raw'][$rawcode]['tquit']) && (!isset($GLOBALS["handle"]) || $GLOBALS["handle"] == false)) { 
-			    xfdie(); 
-		    }
+				xfdie(); 
+			}
 		}
 		else {
 			if (isset($GLOBALS['raw'][$rawcode]['ftext'])) { 
-			    RawEcho($GLOBALS['raw'][$rawcode]['ftext'],$GLOBALS['raw'][$rawcode]['fcolor']); 
-		    }
+				RawEcho($GLOBALS['raw'][$rawcode]['ftext'],$GLOBALS['raw'][$rawcode]['fcolor']); 
+			}
 			if (isset($GLOBALS['raw'][$rawcode]['fquit']) && (!isset($GLOBALS["handle"]) || $GLOBALS["handle"] == false)) { 
-			    xfdie(); 
-		    }
+				xfdie(); 
+			}
 		}
 		if (isset($GLOBALS['raw'][$rawcode]['quit']) && (!isset($GLOBALS["handle"]) || $GLOBALS["handle"] == false)) { 
-		    xfdie(); 
-        }
+			xfdie(); 
+		}
 	}
 }
 
