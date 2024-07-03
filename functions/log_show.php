@@ -33,8 +33,14 @@ if (file_exists($logfilename)) {
 					$string = "";
 					for ($x=$startparse; $x<count($parse); $x++) { 
 					    $string .= $parse[$x] . " "; 
-				    }
-					$echoline .= "<span class=\"log_time\">".date("[Y-m-d H:i:s]",$parse[0]) . "</span><span class=\"log_".$parse[1]."\">&nbsp;" . rtrim($string) . "</span><br>";
+				    	}
+
+					try {
+    					    $date = date("[Y-m-d H:i:s]",$parse[0]);
+					} catch (exception $e) {
+					}	
+
+					$echoline .= "<span class=\"log_time\">".$date . "</span><span class=\"log_".$parse[1]."\">&nbsp;" . rtrim($string) . "</span><br>";
 
 					echo $echoline;
 				}

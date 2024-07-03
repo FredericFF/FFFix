@@ -74,21 +74,12 @@ function savetofile () {
 	}
 }
 
-function xfecho ($data, string $color = 'default', $ts = 1) {
+function xfecho ($data, string $color = 'default') {
 	if (($data != '') && ($data != "\n") && (file_exists($GLOBALS['logfilename']))) {
 		if (substr($data, -1) != "\n") {
 			$data .= "\n";
 		}
-
-		if ($ts == 1) {
-			$write = time() . ' ' . $color . ' ' . $data;
-		}
-		elseif ($color == '') {
-			$write = $data;
-		}
-		else {
-			$write = $color . ' ' . $data;
-		}
+		$write = time() . ' ' . $color . ' ' . $data;
 		fwrite($GLOBALS['logfile'], $write);
 		
 		if ($GLOBALS['showrealtime']) {
@@ -307,8 +298,8 @@ while (true) {
 				xfwrite('PRIVMSG ' . $user . ' :' . $SOH_Char . 'XDCC SEND ' . $pack . $SOH_Char);
 			}
 			elseif ((stristr(p(0),$user)) && (p(3) == ':' . $SOH_Char .'DCC')) {
-				if (p(4) == 'SEND') {
-					echo "Starting DCC...\n";
+				if (p(4) == 'SEND') {					
+					xfecho("Starting DCC...",'status');
 					xfsetmeta("status","starting DCC");
 					$DCCfilesize = (int)(substr(p(8), 0, -3));
 					$DCCfilename = p(5);
@@ -338,7 +329,7 @@ while (true) {
 					//DCC stream
 					$dcc_stream = @fsockopen($DCCip, $DCCport, $errno, $errstr, 30);
 					if (!$dcc_stream) {
-						xfecho($errstr . ': ' . $errno);
+						xfecho($errstr . ': ' . $errno, 'error');
 						xfdie();
 					}
 					else {
